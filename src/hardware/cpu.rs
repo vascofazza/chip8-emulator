@@ -9,7 +9,7 @@ pub const CHIP8_START_POINT: usize = 0x200;
 pub struct CPU
 {
     pub(crate) registers: [u8; 16], // last register contains carry flag
-    pub(crate) i: usize, //register index
+    pub(crate) i: usize, //memory index
     pub(crate) pc: usize,
     pub(crate) sp: usize,
 
@@ -80,7 +80,9 @@ impl CPU{
         //fetch
         let op_code = self.fetch_instruction();
         println!("{:#04X}", op_code);
+        //decode
         let instruction = Instruction::decode(&op_code);
+        //execute
         instruction.execute(self);
     }
 

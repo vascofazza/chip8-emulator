@@ -1,2 +1,2 @@
 # chip8-emulator
-A chip 8 emulator written in Rust
+A Chip-8 emulator written in Rust
