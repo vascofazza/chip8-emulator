@@ -23,5 +23,8 @@ fn main() {
 
     let mut cpu = CPU::new();
     cpu.load_memory(&rom_content);
-
+    loop {
+        cpu.emulate_cycle();
+        println!("{:?}", cpu);
+    }
 }

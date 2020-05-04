@@ -1,5 +1,6 @@
 use super::font::CHIP8_FONTSET;
 use super::instruction::Instruction;
+use std::fmt::{Debug, Result, Formatter};
 
 const CHIP8_RAM_SIZE: usize = 4096;
 const CHIP8_VRAM_SIZE: usize = 4096;
@@ -7,18 +8,35 @@ pub const CHIP8_START_POINT: usize = 0x200;
 
 pub struct CPU
 {
-    registers: [u8; 16], // last register contains carry flag
-    i: u8, //register index
-pub(crate) pc: usize,
+    pub(crate) registers: [u8; 16], // last register contains carry flag
+    pub(crate) i: usize, //register index
+    pub(crate) pc: usize,
     pub(crate) sp: usize,
 
-    ram: [u8; CHIP8_RAM_SIZE],
+    pub(crate) ram: [u8; CHIP8_RAM_SIZE],
     pub vram: [u8; CHIP8_VRAM_SIZE],
     pub video_flag: bool,
     pub(crate) stack: [usize; 16],
 
-    delay_timer: u8,
-    sound_timer: u8,
+    pub(crate) keypad: [bool; 16],
+    pub(crate) keypad_dst: u8,
+
+    pub(crate) delay_timer: u8,
+    pub(crate) sound_timer: u8,
+    pub(crate) await_keypad: bool,
+}
+
+impl Debug for CPU {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        f.debug_struct("CPU")
+            .field("pc", &self.pc)
+            .field("sp", &self.sp)
+            .field("registers", &self.registers)
+            .field("delay_timer", &self.delay_timer)
+            .field("sound_timer", &self.sound_timer)
+            .field("await_keypad", &self.await_keypad)
+            .finish()
+    }
 }
 
 impl CPU{
@@ -41,8 +59,11 @@ impl CPU{
             vram: [0u8; CHIP8_VRAM_SIZE],
             video_flag: false,
             stack: [0; 16],
+            keypad: [false; 16],
+            keypad_dst: 0,
             delay_timer: 0,
-            sound_timer: 0
+            sound_timer: 0,
+            await_keypad: false
         }
     }
 
@@ -58,8 +79,9 @@ impl CPU{
     {
         //fetch
         let op_code = self.fetch_instruction();
+        println!("{:#04X}", op_code);
         let instruction = Instruction::decode(&op_code);
-
+        instruction.execute(self);
     }
 
     fn fetch_instruction(&mut self) -> u16
