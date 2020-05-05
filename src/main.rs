@@ -12,7 +12,7 @@ use std::path::PathBuf;
 use std::time::Instant;
 
 #[derive(Clap)]
-#[clap(version, author)]
+#[clap(version, author, about = "A simple Chip-8 emulator written in Rust.")]
 struct Opt {
     #[clap(short, long, default_value = "500")]
     /// The emulation speed
