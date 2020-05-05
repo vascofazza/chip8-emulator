@@ -1,17 +1,16 @@
 use super::font::CHIP8_FONTSET;
 use super::instruction::Instruction;
-use std::fmt::{Debug, Result, Formatter};
+use std::fmt::{Debug, Formatter, Result};
 use std::time::Instant;
 
 const CHIP8_TIMER_DELAY: u128 = ((1. / 60. * 1000.) + 0.) as u128;
 const CHIP8_RAM_SIZE: usize = 4096;
-const CHIP8_VRAM_SIZE: usize = 64*32;
+const CHIP8_VRAM_SIZE: usize = 64 * 32;
 pub const CHIP8_START_POINT: usize = 0x200;
 
-pub struct CPU
-{
+pub struct CPU {
     pub(crate) registers: [u8; 16], // last register contains carry flag
-    pub(crate) i: usize, //memory index
+    pub(crate) i: usize,            //memory index
     pub(crate) pc: usize,
     pub(crate) sp: usize,
 
@@ -26,7 +25,7 @@ pub struct CPU
     pub(crate) delay_timer: u8,
     pub(crate) sound_timer: u8,
     pub(crate) await_keypad: bool,
-    timer_delay: Instant
+    timer_delay: Instant,
 }
 
 impl Debug for CPU {
@@ -42,18 +41,15 @@ impl Debug for CPU {
     }
 }
 
-impl CPU{
-    pub fn new() -> Self
-    {
+impl CPU {
+    pub fn new() -> Self {
         //load font-set
         let mut ram = [0u8; CHIP8_RAM_SIZE];
-        for i in 0..CHIP8_FONTSET.len()
-        {
+        for i in 0..CHIP8_FONTSET.len() {
             ram[i] = CHIP8_FONTSET[i];
         }
 
-        CPU
-        {
+        CPU {
             registers: [0u8; 16],
             i: 0,
             pc: CHIP8_START_POINT,
@@ -67,20 +63,17 @@ impl CPU{
             delay_timer: 0,
             sound_timer: 0,
             await_keypad: false,
-            timer_delay: Instant::now()
+            timer_delay: Instant::now(),
         }
     }
 
-    pub fn load_memory(&mut self, data: &[u8])
-    {
-        for i in 0..data.len()
-        {
+    pub fn load_memory(&mut self, data: &[u8]) {
+        for i in 0..data.len() {
             self.ram[i + CHIP8_START_POINT] = data[i];
         }
     }
 
-    pub fn emulate_cycle(&mut self, keypad: [bool; 16]) -> CpuState
-    {
+    pub fn emulate_cycle(&mut self, keypad: [bool; 16]) -> CpuState {
         self.keypad = keypad;
         self.vram_flag = false;
         if self.await_keypad {
@@ -92,12 +85,10 @@ impl CPU{
                 }
             }
         }
-        if self.await_keypad
-        {
-            return CpuState
-            {
+        if self.await_keypad {
+            return CpuState {
                 updated_vram: false,
-                beep: false
+                beep: false,
             };
         }
         //fetch
@@ -107,38 +98,32 @@ impl CPU{
         let instruction = Instruction::decode(&op_code);
         //execute
 
-        if self.timer_delay.elapsed().as_millis() > CHIP8_TIMER_DELAY
-        {
-            if self.delay_timer > 0
-            {
+        if self.timer_delay.elapsed().as_millis() > CHIP8_TIMER_DELAY {
+            if self.delay_timer > 0 {
                 self.delay_timer -= 1;
             }
 
-            if self.sound_timer > 0
-            {
+            if self.sound_timer > 0 {
                 self.sound_timer -= 1;
             }
             self.timer_delay = Instant::now();
         }
         instruction.execute(self);
 
-        return CpuState
-        {
+        return CpuState {
             updated_vram: self.vram_flag,
-            beep: self.sound_timer > 0
+            beep: self.sound_timer > 0,
         };
     }
 
-    fn fetch_instruction(&mut self) -> u16
-    {
+    fn fetch_instruction(&mut self) -> u16 {
         let op_code = (self.ram[self.pc] as u16) << 8 | self.ram[self.pc + 1] as u16;
         self.pc += 2;
         op_code
     }
 }
 
-pub struct CpuState
-{
+pub struct CpuState {
     pub(crate) updated_vram: bool,
-    pub(crate) beep: bool
+    pub(crate) beep: bool,
 }

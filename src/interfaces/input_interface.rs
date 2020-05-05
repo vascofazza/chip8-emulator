@@ -1,20 +1,16 @@
 use sdl2::keyboard::Keycode;
 use sdl2::EventPump;
 
-pub struct InputInterface
-{
+pub struct InputInterface {
     //event_pump: &'a EventPump
 }
 
-impl InputInterface<>
-{
-    pub fn new() -> InputInterface
-    {
-        InputInterface {  }
+impl InputInterface {
+    pub fn new() -> InputInterface {
+        InputInterface {}
     }
 
-    pub fn poll(&self, event_pump: &EventPump) -> [bool; 16]
-    {
+    pub fn poll(&self, event_pump: &EventPump) -> [bool; 16] {
         let keys: Vec<Keycode> = event_pump
             .keyboard_state()
             .pressed_scancodes()

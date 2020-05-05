@@ -1,9 +1,8 @@
-use sdl2::audio::{AudioDevice, AudioCallback, AudioSpecDesired};
+use sdl2::audio::{AudioCallback, AudioDevice, AudioSpecDesired};
 
 //https://github.com/Rust-SDL2/rust-sdl2/blob/master/examples/audio-squarewave.rs
-pub struct AudioInterface
-{
-    device: AudioDevice<SquareWave>
+pub struct AudioInterface {
+    device: AudioDevice<SquareWave>,
 }
 
 impl AudioInterface {
@@ -13,7 +12,7 @@ impl AudioInterface {
         let desired_spec = AudioSpecDesired {
             freq: Some(44100),
             channels: Some(1), // mono
-            samples: None, // default sample size
+            samples: None,     // default sample size
         };
 
         let device = audio_subsystem
