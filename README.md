@@ -9,7 +9,7 @@ This is a chip-8 VM built in rust. If you're reading this, chances are that you'
 
 You need to have sdl2 installed with headers. 
 
-On Linux, execute this:
+On Linux, run this:
 
 ```
 sudo apt-get install libsdl2-dev libsdl2-gfx-dev
