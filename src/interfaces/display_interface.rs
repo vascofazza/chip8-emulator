@@ -5,8 +5,10 @@ use sdl2::render::Canvas;
 use sdl2::video::Window;
 
 use crate::hardware::{CHIP8_HEIGHT, CHIP8_WIDTH};
+use rand::Rng;
 
 const SCALE_FACTOR: u32 = 10;
+const NOISE_FACTOR: u32 = 4;
 const SCREEN_WIDTH: u32 = (CHIP8_WIDTH as u32) * SCALE_FACTOR;
 const SCREEN_HEIGHT: u32 = (CHIP8_HEIGHT as u32) * SCALE_FACTOR;
 
@@ -43,10 +45,18 @@ impl DisplayInterface {
             let y = index / CHIP8_WIDTH;
             let x = (x as u32) * SCALE_FACTOR;
             let y = (y as u32) * SCALE_FACTOR;
+            let mut rng = rand::thread_rng();
+            for x_off in 0..SCALE_FACTOR/NOISE_FACTOR
+            {
+                for y_off in 0..SCALE_FACTOR/NOISE_FACTOR
+                {
+                    let rand: u8 = rng.gen_range(190, 240);
 
-            self.canvas.set_draw_color(color(pixel));
-            let _ = self.canvas
-                .fill_rect(Rect::new(x as i32, y as i32, SCALE_FACTOR, SCALE_FACTOR));
+                    self.canvas.set_draw_color(color(pixel * rand));
+                    self.canvas
+                        .fill_rect(Rect::new((x + x_off * NOISE_FACTOR) as i32, (y + y_off * NOISE_FACTOR) as i32, NOISE_FACTOR, NOISE_FACTOR));
+                }
+            }
         }
         self.canvas.present();
     }
@@ -56,6 +66,6 @@ fn color(value: u8) -> pixels::Color {
     if value == 0 {
         pixels::Color::RGB(0, 0, 0)
     } else {
-        pixels::Color::RGB(0, 235, 0)
+        pixels::Color::RGB(0, value, 0)
     }
 }
