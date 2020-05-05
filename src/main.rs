@@ -8,6 +8,9 @@ use std::thread;
 use std::time::Duration;
 
 use sdl2::event::Event;
+use std::time::Instant;
+
+const EMULATION_SPEED: f32 = 500.;
 
 fn main() {
 
@@ -28,10 +31,7 @@ fn main() {
         process::exit(1);
     });
 
-    let sleep_duration = Duration::from_millis(2);
-
-
-
+    let sleep_duration = (1. / EMULATION_SPEED * 1000.) as u128;
 
 
     let mut cpu = CPU::new();
@@ -39,9 +39,10 @@ fn main() {
 
     let mut event_pump = sdl_context.event_pump().unwrap();
 
-
-
     'outer: loop {
+
+        let current_time = Instant::now();
+
         for event in event_pump.poll_iter() {
             match event {
                 Event::Quit {..} => {
@@ -89,7 +90,8 @@ fn main() {
         if cpu.video_flag {
             display_driver.draw(&cpu.vram);
         }
-        thread::sleep(sleep_duration);
+
+        while current_time.elapsed().as_millis() < sleep_duration {} ;
     }
 }
 

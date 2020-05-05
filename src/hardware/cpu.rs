@@ -1,7 +1,9 @@
 use super::font::CHIP8_FONTSET;
 use super::instruction::Instruction;
 use std::fmt::{Debug, Result, Formatter};
+use std::time::Instant;
 
+const CHIP8_TIMER_DELAY: u128 = ((1. / 60. * 1000.) + 0.) as u128;
 const CHIP8_RAM_SIZE: usize = 4096;
 const CHIP8_VRAM_SIZE: usize = 64*32;
 pub const CHIP8_START_POINT: usize = 0x200;
@@ -24,6 +26,7 @@ pub struct CPU
     pub(crate) delay_timer: u8,
     pub(crate) sound_timer: u8,
     pub(crate) await_keypad: bool,
+    timer_delay: Instant
 }
 
 impl Debug for CPU {
@@ -63,7 +66,8 @@ impl CPU{
             keypad_dst: 0,
             delay_timer: 0,
             sound_timer: 0,
-            await_keypad: false
+            await_keypad: false,
+            timer_delay: Instant::now()
         }
     }
 
@@ -95,16 +99,21 @@ impl CPU{
         //decode
         let instruction = Instruction::decode(&op_code);
         //execute
-        instruction.execute(self);
-        if self.delay_timer > 0
-        {
-            self.delay_timer -= 1;
-        }
 
-        if self.sound_timer > 0
+        if self.timer_delay.elapsed().as_millis() > CHIP8_TIMER_DELAY
         {
-            self.sound_timer -= 1;
+            if self.delay_timer > 0
+            {
+                self.delay_timer -= 1;
+            }
+
+            if self.sound_timer > 0
+            {
+                self.sound_timer -= 1;
+            }
+            self.timer_delay = Instant::now();
         }
+        instruction.execute(self);
     }
 
     fn fetch_instruction(&mut self) -> u16
