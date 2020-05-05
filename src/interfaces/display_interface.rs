@@ -20,11 +20,7 @@ impl DisplayInterface {
     pub fn new(sdl_context: &sdl2::Sdl) -> Self {
         let video_subsys = sdl_context.video().unwrap();
         let window = video_subsys
-            .window(
-                "Chip-8 Emulator",
-                SCREEN_WIDTH,
-                SCREEN_HEIGHT,
-            )
+            .window("Chip-8 Emulator", SCREEN_WIDTH, SCREEN_HEIGHT)
             .position_centered()
             .opengl()
             .build()
@@ -46,15 +42,17 @@ impl DisplayInterface {
             let x = (x as u32) * SCALE_FACTOR;
             let y = (y as u32) * SCALE_FACTOR;
             let mut rng = rand::thread_rng();
-            for x_off in 0..SCALE_FACTOR/NOISE_FACTOR
-            {
-                for y_off in 0..SCALE_FACTOR/NOISE_FACTOR
-                {
+            for x_off in 0..SCALE_FACTOR / NOISE_FACTOR {
+                for y_off in 0..SCALE_FACTOR / NOISE_FACTOR {
                     let rand: u8 = rng.gen_range(190, 240);
 
                     self.canvas.set_draw_color(color(pixel * rand));
-                    self.canvas
-                        .fill_rect(Rect::new((x + x_off * NOISE_FACTOR) as i32, (y + y_off * NOISE_FACTOR) as i32, NOISE_FACTOR, NOISE_FACTOR));
+                    self.canvas.fill_rect(Rect::new(
+                        (x + x_off * NOISE_FACTOR) as i32,
+                        (y + y_off * NOISE_FACTOR) as i32,
+                        NOISE_FACTOR,
+                        NOISE_FACTOR,
+                    ));
                 }
             }
         }
