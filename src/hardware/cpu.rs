@@ -19,7 +19,7 @@ pub struct CPU
     pub(crate) stack: [usize; 16],
 
     pub(crate) keypad: [bool; 16],
-    pub(crate) keypad_dst: u8,
+    pub(crate) keypad_dst: usize,
 
     pub(crate) delay_timer: u8,
     pub(crate) sound_timer: u8,
@@ -75,8 +75,20 @@ impl CPU{
         }
     }
 
-    pub fn emulate_cycle(&mut self)
+    pub fn emulate_cycle(&mut self, keypad: [bool; 16])
     {
+        self.keypad = keypad;
+        self.video_flag = false;
+        if self.await_keypad {
+            for (i, &key) in keypad.iter().enumerate() {
+                if key {
+                    self.await_keypad = false;
+                    self.registers[self.keypad_dst] = i as u8;
+                    break;
+                }
+            }
+        }
+        if self.await_keypad {return;}
         //fetch
         let op_code = self.fetch_instruction();
         //println!("{:#04X}", op_code);

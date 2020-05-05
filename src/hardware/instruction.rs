@@ -86,16 +86,16 @@ impl Instruction{
 
     fn ret(cpu: &mut cpu::CPU)
     {
-        cpu.sp -= 1; //must not overflow
+        cpu.sp -= 1;
         let return_point = cpu.stack[cpu.sp];
-        cpu.pc = /*cpu::CHIP8_START_POINT + */return_point as usize;
+        cpu.pc = return_point as usize;
     }
 
     fn jump(nnn: usize) -> Box<dyn Fn(&mut CPU)>
     {
         Box::new(move |cpu: &mut cpu::CPU|
             {
-                cpu.pc = /*cpu::CHIP8_START_POINT +*/nnn;
+                cpu.pc = nnn;
             }
         )
     }
@@ -106,11 +106,13 @@ impl Instruction{
             {
                 cpu.stack[cpu.sp] = cpu.pc;
                 cpu.sp += 1;
-                cpu.pc = /*cpu::CHIP8_START_POINT + */nnn;
+                cpu.pc =nnn;
             }
         )
     }
 
+    // LD Vx, byte
+    // Set Vx = kk.
     fn load_i(x: usize, nn: u8) -> Box<dyn Fn(&mut CPU)>
     {
         Box::new(move |cpu: &mut cpu::CPU|
@@ -128,7 +130,6 @@ impl Instruction{
                 {
                     cpu.pc += 2; //skip
                 }
-                //println!("BEQ {} {}", x, nn);
             }
         )
     }
@@ -141,7 +142,6 @@ impl Instruction{
                 {
                     cpu.pc += 2; //skip
                 }
-                //println!("BNE {} {}", x, nn);
             }
         )
     }
@@ -154,7 +154,6 @@ impl Instruction{
                 {
                     cpu.pc += 2; //skip
                 }
-                //println!("BEQR");
             }
         )
     }
@@ -167,7 +166,6 @@ impl Instruction{
                 {
                     cpu.pc += 2; //skip
                 }
-                //println!("BNER");
             }
         )
     }
@@ -217,27 +215,24 @@ impl Instruction{
         )
     }
 
+    // ADD Vx, Vy
+    // The values of Vx and Vy are added together. If the result is
+    // greater than 8 bits (i.e., > 255,) VF is set to 1, otherwise 0.
+    // Only the lowest 8 bits of the result are kept, and stored in Vx.
     fn add(x: usize, y: usize) -> Box<dyn Fn(&mut CPU)>
     {
         Box::new(move |cpu: &mut cpu::CPU|
             {
-                /*if let Some(t) = cpu.registers[x].checked_add(cpu.registers[y])
+                if let Some(t) = cpu.registers[x].checked_add(cpu.registers[y])
                 {
                     cpu.registers[x] = t;
-                    cpu.registers[15] = 1;
+                    cpu.registers[15] = 0;
                 }
                 else
                 {
                     cpu.registers[x] = (cpu.registers[x] as u16 + cpu.registers[y] as u16) as u8;
-                    cpu.registers[15] = 0;
+                    cpu.registers[15] = 1;
                 }
-
-                 */
-                let vx = cpu.registers[x] as u16;
-                let vy = cpu.registers[y] as u16;
-                let result = vx + vy;
-                cpu.registers[x] = result as u8;
-                cpu.registers[0x0f] = if result > 0xFF { 1 } else { 0 };
             }
         )
     }
@@ -246,16 +241,15 @@ impl Instruction{
     {
         Box::new(move |cpu: &mut cpu::CPU|
             {
-                cpu.registers[15] = if cpu.registers[x] > cpu.registers[y] { 1 } else { 0 };
                 if let Some(t) = cpu.registers[x].checked_sub(cpu.registers[y])
                 {
                     cpu.registers[x] = t;
-                    //cpu.registers[15] = 0;
+                    cpu.registers[15] = 1;
                 }
                 else
                 {
                     cpu.registers[x] = (cpu.registers[x] as i16 - cpu.registers[y] as i16) as u8;
-                    //cpu.registers[15] = 1;
+                    cpu.registers[15] = 0;
                 }
 
             }
@@ -276,7 +270,7 @@ impl Instruction{
     {
         Box::new(move |cpu: &mut cpu::CPU|
             {
-                /*if let Some(t) = cpu.registers[y].checked_sub(cpu.registers[x])
+                if let Some(t) = cpu.registers[y].checked_sub(cpu.registers[x])
                 {
                     cpu.registers[x] = cpu.registers[y] - cpu.registers[x];
                     cpu.registers[15] = 1;
@@ -286,10 +280,6 @@ impl Instruction{
                     cpu.registers[x] = (cpu.registers[y] as i16 - cpu.registers[x] as i16) as u8;
                     cpu.registers[15] = 0;
                 }
-
-                 */
-                cpu.registers[0x0f] = if cpu.registers[x] > cpu.registers[y] { 1 } else { 0 };
-                cpu.registers[x] = cpu.registers[x].wrapping_sub(cpu.registers[y]);
             }
         )
     }
@@ -355,10 +345,11 @@ impl Instruction{
 
 
                         let vram_address = x + y; //TODO refactor
-                        let current_display = cpu.vram[vram_address];
-                        let new_display = (cpu.ram[cpu.i + i] >> (7 - b) as u8) & 1;//((cpu.ram[ram_address] >> (7 - b) as u8) & 1);
-                        cpu.registers[15] |= ((current_display ^ new_display) > 0) as u8;
-                        cpu.vram[vram_address] ^= new_display;
+                        let current_pixel = cpu.vram[vram_address];
+                        let mask: u8 = (1 << 7 - b) as u8;
+                        let new_pixel = current_pixel ^ (cpu.ram[ram_address] & mask > 0) as u8;
+                        cpu.vram[vram_address] = new_pixel;
+                        cpu.registers[15] |= (current_pixel > 0 && new_pixel == 0) as u8;
                     }
                 }
                 cpu.video_flag = true;
@@ -403,7 +394,7 @@ impl Instruction{
     {
         Box::new(move |cpu: &mut cpu::CPU|
             {
-                cpu.keypad_dst = x as u8;
+                cpu.keypad_dst = x;
                 cpu.await_keypad = true;
             }
         )
@@ -432,7 +423,9 @@ impl Instruction{
         Box::new(move |cpu: &mut cpu::CPU|
             {
                 cpu.i += cpu.registers[x] as usize;
-                cpu.registers[15] = if cpu.i > 0x0F00 { 1 } else { 0 };
+                cpu.registers[15] = if cpu.i > 0xFFF { 1 } else { 0 };
+                cpu.i &=0xFFF;
+
             }
         )
     }
