@@ -1,11 +1,11 @@
 # chip8-emulator
 A Chip-8 emulator written in Rust
 
-### Introduction
+## Introduction
 
 This is a chip-8 VM built in rust. If you're reading this, chances are that you're thinking of writing your own emulator. You should! It gives you a great feel for how home computers worked back in the late 70s. 
 
-### Requirements
+## Requirements
 
 You need to have sdl2 installed with headers. 
 
@@ -21,7 +21,7 @@ While on Mac:
 brew install sdl2
 ```
 
-### Usage
+## Usage
 
 Clone this repository, then run:
 
@@ -31,7 +31,7 @@ cargo run /path/to/game
 
 You can find public-domain games [here](https://www.zophar.net/pdroms/chip8/chip-8-games-pack.html).
 
-### How to play
+## How to play
 
 The entire chip8 keyboard is mapped like this:
 
