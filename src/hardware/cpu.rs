@@ -17,7 +17,7 @@ pub struct CPU
 
     pub(crate) ram: [u8; CHIP8_RAM_SIZE],
     pub vram: [u8; CHIP8_VRAM_SIZE],
-    pub video_flag: bool,
+    pub vram_flag: bool,
     pub(crate) stack: [usize; 16],
 
     pub(crate) keypad: [bool; 16],
@@ -60,7 +60,7 @@ impl CPU{
             sp: 0,
             ram,
             vram: [0u8; CHIP8_VRAM_SIZE],
-            video_flag: false,
+            vram_flag: false,
             stack: [0; 16],
             keypad: [false; 16],
             keypad_dst: 0,
@@ -79,10 +79,10 @@ impl CPU{
         }
     }
 
-    pub fn emulate_cycle(&mut self, keypad: [bool; 16])
+    pub fn emulate_cycle(&mut self, keypad: [bool; 16]) -> CpuState
     {
         self.keypad = keypad;
-        self.video_flag = false;
+        self.vram_flag = false;
         if self.await_keypad {
             for (i, &key) in keypad.iter().enumerate() {
                 if key {
@@ -92,7 +92,14 @@ impl CPU{
                 }
             }
         }
-        if self.await_keypad {return;}
+        if self.await_keypad
+        {
+            return CpuState
+            {
+                updated_vram: false,
+                beep: false
+            };
+        }
         //fetch
         let op_code = self.fetch_instruction();
         //println!("{:#04X}", op_code);
@@ -114,6 +121,12 @@ impl CPU{
             self.timer_delay = Instant::now();
         }
         instruction.execute(self);
+
+        return CpuState
+        {
+            updated_vram: self.vram_flag,
+            beep: self.sound_timer > 0
+        };
     }
 
     fn fetch_instruction(&mut self) -> u16
@@ -122,4 +135,10 @@ impl CPU{
         self.pc += 2;
         op_code
     }
+}
+
+pub struct CpuState
+{
+    pub(crate) updated_vram: bool,
+    pub(crate) beep: bool
 }

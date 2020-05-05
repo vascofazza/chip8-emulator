@@ -1,5 +1,4 @@
 use super::cpu;
-use std::fmt::Debug;
 use crate::hardware::cpu::CPU;
 use rand::Rng;
 
@@ -56,7 +55,7 @@ impl Instruction{
             (0x0f, _, 0x01, 0x08) => Instruction::sound_timer(x),
             (0x0f, _, 0x01, 0x0e) => Instruction::inc_mem(x),
             (0x0f, _, 0x02, 0x09) => Instruction::load_sprite(x),
-            (0x0f, _, 0x03, 0x03) => Instruction::BCD(x),
+            (0x0f, _, 0x03, 0x03) => Instruction::bcd(x),
             (0x0f, _, 0x05, 0x05) => Instruction::reg_dump(x),
             (0x0f, _, 0x06, 0x05) => Instruction::reg_load(x),
             _ => Box::new(Instruction::unknown(op_code)),
@@ -81,7 +80,7 @@ impl Instruction{
         {
             cpu.vram[i] = 0;
         }
-        cpu.video_flag = true;
+        cpu.vram_flag = true;
     }
 
     fn ret(cpu: &mut cpu::CPU)
@@ -272,7 +271,7 @@ impl Instruction{
             {
                 if let Some(t) = cpu.registers[y].checked_sub(cpu.registers[x])
                 {
-                    cpu.registers[x] = cpu.registers[y] - cpu.registers[x];
+                    cpu.registers[x] = t;
                     cpu.registers[15] = 1;
                 }
                 else
@@ -352,7 +351,7 @@ impl Instruction{
                         cpu.registers[15] |= (current_pixel > 0 && new_pixel == 0) as u8;
                     }
                 }
-                cpu.video_flag = true;
+                cpu.vram_flag = true;
             }
         )
     }
@@ -404,7 +403,7 @@ impl Instruction{
     {
         Box::new(move |cpu: &mut cpu::CPU|
             {
-                cpu.delay_timer = x as u8;
+                cpu.delay_timer = cpu.registers[x];
             }
         )
     }
@@ -413,7 +412,7 @@ impl Instruction{
     {
         Box::new(move |cpu: &mut cpu::CPU|
             {
-                cpu.sound_timer = x as u8;
+                cpu.sound_timer = cpu.registers[x];
             }
         )
     }
@@ -439,7 +438,7 @@ impl Instruction{
         )
     }
 
-    fn BCD(x: usize) -> Box<dyn Fn(&mut CPU)>
+    fn bcd(x: usize) -> Box<dyn Fn(&mut CPU)>
     {
         Box::new(move |cpu: &mut cpu::CPU|
             {
@@ -472,15 +471,15 @@ impl Instruction{
         )
     }
 
-    fn nop(cpu: &mut cpu::CPU)
+    fn nop(_cpu: &mut cpu::CPU)
     {
 
     }
 
     fn unknown(op_code: &u16) -> fn(&mut cpu::CPU)
     {
-        panic!("Unknown OP_CODE: {:#04X}", op_code);
-        //Instruction::nop
+        eprintln!("Unknown OP_CODE: {:#04X}", op_code);
+        Instruction::nop
     }
 }
 
