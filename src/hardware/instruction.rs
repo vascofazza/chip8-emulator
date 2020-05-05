@@ -128,6 +128,7 @@ impl Instruction{
                 {
                     cpu.pc += 2; //skip
                 }
+                //println!("BEQ {} {}", x, nn);
             }
         )
     }
@@ -140,6 +141,7 @@ impl Instruction{
                 {
                     cpu.pc += 2; //skip
                 }
+                //println!("BNE {} {}", x, nn);
             }
         )
     }
@@ -152,6 +154,7 @@ impl Instruction{
                 {
                     cpu.pc += 2; //skip
                 }
+                //println!("BEQR");
             }
         )
     }
@@ -164,6 +167,7 @@ impl Instruction{
                 {
                     cpu.pc += 2; //skip
                 }
+                //println!("BNER");
             }
         )
     }
@@ -172,7 +176,7 @@ impl Instruction{
     {
         Box::new(move |cpu: &mut cpu::CPU|
             {
-                cpu.registers[x] += nn;
+                cpu.registers[x] = (cpu.registers[x] as u16 + nn as u16) as u8;
             }
         )
     }
@@ -181,7 +185,7 @@ impl Instruction{
     {
         Box::new(move |cpu: &mut cpu::CPU|
             {
-                cpu.registers[x] == cpu.registers[y];
+                cpu.registers[x] = cpu.registers[y];
             }
         )
     }
@@ -190,7 +194,7 @@ impl Instruction{
     {
         Box::new(move |cpu: &mut cpu::CPU|
             {
-                cpu.registers[x] != cpu.registers[y];
+                cpu.registers[x] |= cpu.registers[y];
             }
         )
     }
@@ -217,16 +221,23 @@ impl Instruction{
     {
         Box::new(move |cpu: &mut cpu::CPU|
             {
-                if let Some(t) = cpu.registers[x].checked_add(cpu.registers[y])
+                /*if let Some(t) = cpu.registers[x].checked_add(cpu.registers[y])
                 {
-                    cpu.registers[x] += cpu.registers[y];
-                    cpu.registers[15] = 0;
+                    cpu.registers[x] = t;
+                    cpu.registers[15] = 1;
                 }
                 else
                 {
                     cpu.registers[x] = (cpu.registers[x] as u16 + cpu.registers[y] as u16) as u8;
-                    cpu.registers[15] = 1;
+                    cpu.registers[15] = 0;
                 }
+
+                 */
+                let vx = cpu.registers[x] as u16;
+                let vy = cpu.registers[y] as u16;
+                let result = vx + vy;
+                cpu.registers[x] = result as u8;
+                cpu.registers[0x0f] = if result > 0xFF { 1 } else { 0 };
             }
         )
     }
@@ -235,16 +246,18 @@ impl Instruction{
     {
         Box::new(move |cpu: &mut cpu::CPU|
             {
+                cpu.registers[15] = if cpu.registers[x] > cpu.registers[y] { 1 } else { 0 };
                 if let Some(t) = cpu.registers[x].checked_sub(cpu.registers[y])
                 {
-                    cpu.registers[x] += cpu.registers[y];
-                    cpu.registers[15] = 1;
+                    cpu.registers[x] = t;
+                    //cpu.registers[15] = 0;
                 }
                 else
                 {
                     cpu.registers[x] = (cpu.registers[x] as i16 - cpu.registers[y] as i16) as u8;
-                    cpu.registers[15] = 0;
+                    //cpu.registers[15] = 1;
                 }
+
             }
         )
     }
@@ -263,7 +276,7 @@ impl Instruction{
     {
         Box::new(move |cpu: &mut cpu::CPU|
             {
-                if let Some(t) = cpu.registers[y].checked_sub(cpu.registers[x])
+                /*if let Some(t) = cpu.registers[y].checked_sub(cpu.registers[x])
                 {
                     cpu.registers[x] = cpu.registers[y] - cpu.registers[x];
                     cpu.registers[15] = 1;
@@ -273,6 +286,10 @@ impl Instruction{
                     cpu.registers[x] = (cpu.registers[y] as i16 - cpu.registers[x] as i16) as u8;
                     cpu.registers[15] = 0;
                 }
+
+                 */
+                cpu.registers[0x0f] = if cpu.registers[x] > cpu.registers[y] { 1 } else { 0 };
+                cpu.registers[x] = cpu.registers[x].wrapping_sub(cpu.registers[y]);
             }
         )
     }
@@ -281,7 +298,7 @@ impl Instruction{
     {
         Box::new(move |cpu: &mut cpu::CPU|
             {
-                cpu.registers[15] = cpu.registers[x] & 0x80u8;
+                cpu.registers[15] = cpu.registers[x] >> 7;
                 cpu.registers[x] <<= 1;
             }
         )
@@ -328,15 +345,21 @@ impl Instruction{
     {
         Box::new(move |cpu: &mut cpu::CPU|
             {
+                cpu.registers[15] = 0;
                 for i in 0..n
                 {
                     let ram_address = cpu.i + i;
-                    let vram_address = 32 * (cpu.registers[x] as usize % 32) + (cpu.registers[y] as usize % 64); //TODO refactor
-                    let current_display = cpu.vram[vram_address];
-                    let new_display = current_display ^ cpu.ram[ram_address];
-                    cpu.registers[15] = (new_display == 0) as u8;
-                    cpu.vram[vram_address] = new_display;
-                    //TODO add support for colors
+                    let y = 64 * ((cpu.registers[y] as usize + i) % 32);
+                    for b in 0..8 {
+                        let x = (cpu.registers[x] as usize + b) % 64;
+
+
+                        let vram_address = x + y; //TODO refactor
+                        let current_display = cpu.vram[vram_address];
+                        let new_display = (cpu.ram[cpu.i + i] >> (7 - b) as u8) & 1;//((cpu.ram[ram_address] >> (7 - b) as u8) & 1);
+                        cpu.registers[15] |= ((current_display ^ new_display) > 0) as u8;
+                        cpu.vram[vram_address] ^= new_display;
+                    }
                 }
                 cpu.video_flag = true;
             }

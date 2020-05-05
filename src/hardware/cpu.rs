@@ -3,7 +3,7 @@ use super::instruction::Instruction;
 use std::fmt::{Debug, Result, Formatter};
 
 const CHIP8_RAM_SIZE: usize = 4096;
-const CHIP8_VRAM_SIZE: usize = 4096;
+const CHIP8_VRAM_SIZE: usize = 64*32;
 pub const CHIP8_START_POINT: usize = 0x200;
 
 pub struct CPU
@@ -55,7 +55,7 @@ impl CPU{
             i: 0,
             pc: CHIP8_START_POINT,
             sp: 0,
-            ram: [0u8; CHIP8_RAM_SIZE],
+            ram,
             vram: [0u8; CHIP8_VRAM_SIZE],
             video_flag: false,
             stack: [0; 16],
@@ -79,11 +79,20 @@ impl CPU{
     {
         //fetch
         let op_code = self.fetch_instruction();
-        println!("{:#04X}", op_code);
+        //println!("{:#04X}", op_code);
         //decode
         let instruction = Instruction::decode(&op_code);
         //execute
         instruction.execute(self);
+        if self.delay_timer > 0
+        {
+            self.delay_timer -= 1;
+        }
+
+        if self.sound_timer > 0
+        {
+            self.sound_timer -= 1;
+        }
     }
 
     fn fetch_instruction(&mut self) -> u16
