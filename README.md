@@ -1,6 +1,8 @@
 # chip8-emulator
 A Chip-8 emulator written in Rust
 
+![space_invaders](space_invaders.png)
+
 ## Introduction
 
 This is a chip-8 VM built in rust. If you're reading this, chances are that you're thinking of writing your own emulator. You should! It gives you a great feel for how home computers worked back in the late 70s. 
