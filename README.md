@@ -20,7 +20,7 @@ sudo apt-get install libsdl2-dev libsdl2-gfx-dev
 While on Mac:
 
 ```
-brew install sdl2
+brew install sdl2_gfx
 ```
 
 ## Usage
